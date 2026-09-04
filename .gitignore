@@ -1,0 +1,22 @@
+# v0 sandbox internal files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.v0-trash/
+.vercel/
+
+# Environment variables
+.env*.local
+
+# Local-dev-only account/credit storage — see lib/accounts/store.ts and
+# lib/billing/credits.ts. Contains password hashes; never commit real data.
+# Production must be wired to a real database before this ever holds real
+# accounts (see docs/DASHBOARD.md).
+data/accounts.json
+data/credits.json
+
+# Common ignores
+node_modules
+.next/
+.DS_Store

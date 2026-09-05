@@ -1,30 +1,17 @@
 import "server-only";
-import fs from "fs";
-import path from "path";
-import crypto from "crypto";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import { CreditBalance, CreditTransaction, CreditTransactionType } from "@/types/account";
 
 /**
  * lib/billing/credits.ts
  * ---------------------------------------------------------------------
- * The ledger behind "clients pay for Vapi usage credits, topped up
- * manually via a Payment Request Link (Elevate Pay / PingPong /
- * Payoneer)." No payment processor integration here on purpose — per the
- * stated model, a human (you) sends the link and marks the top-up once
- * paid; this file only records the resulting balance change and exposes
- * it to the admin and client dashboards.
- *
- * Same swappable-store pattern as lib/accounts/store.ts, and the exact
- * same production limitation applies: this JSON-file implementation is
- * local-dev only. A client's real credit balance must live in a real
- * database before this is trusted with real money — see that file's
- * header and docs/DASHBOARD.md.
+ * Supabase-backed CreditLedger — same interface as before. See
+ * supabase/schema.sql for the `credit_transactions` table.
  * ---------------------------------------------------------------------
  */
 
 export interface CreditLedger {
   getBalance(businessId: string): Promise<CreditBalance>;
-  /** amount > 0 adds credit (e.g. manual_topup), amount < 0 deducts (e.g. usage). */
   recordTransaction(
     businessId: string,
     type: CreditTransactionType,
@@ -34,78 +21,66 @@ export interface CreditLedger {
   listAllBalances(): Promise<CreditBalance[]>;
 }
 
-const DATA_FILE = path.join(process.cwd(), "data", "credits.json");
-
-interface LedgerFile {
-  [businessId: string]: CreditTransaction[];
-}
-
-function readAll(): LedgerFile {
-  if (!fs.existsSync(DATA_FILE)) return {};
-  try {
-    const raw = fs.readFileSync(DATA_FILE, "utf-8");
-    return raw.trim() ? (JSON.parse(raw) as LedgerFile) : {};
-  } catch (err) {
-    console.error("[credits] failed to read data/credits.json:", err);
-    return {};
-  }
-}
-
-function writeAll(data: LedgerFile): void {
-  fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
+function rowToTransaction(row: {
+  id: string;
+  business_id: string;
+  type: CreditTransactionType;
+  amount: number;
+  note: string | null;
+  created_at: string;
+}): CreditTransaction {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    type: row.type,
+    amount: row.amount,
+    note: row.note ?? undefined,
+    createdAtISO: row.created_at,
+  };
 }
 
 function balanceFrom(businessId: string, transactions: CreditTransaction[]): CreditBalance {
-  const sorted = [...transactions].sort((a, b) => a.createdAtISO.localeCompare(b.createdAtISO));
   return {
     businessId,
-    balance: sorted.reduce((sum, t) => sum + t.amount, 0),
-    transactions: sorted,
+    balance: transactions.reduce((sum, t) => sum + t.amount, 0),
+    transactions,
   };
 }
 
-/**
- * Local-dev implementation of CreditLedger, backed by a single JSON file.
- * Do not use as-is for real client balances — see file header.
- *
- * @example
- * ```ts
- * // Admin manually credits a client after confirming a Payoneer payment:
- * await creditLedger.recordTransaction(businessId, "manual_topup", 500, "Payoneer PR-0142 paid");
- *
- * // Usage deduction after a Vapi call:
- * await creditLedger.recordTransaction(businessId, "usage", -3, "4-minute call");
- * ```
- */
-export function createJsonFileCreditLedger(): CreditLedger {
+export function createSupabaseCreditLedger(): CreditLedger {
+  const supabase = getSupabaseClient();
+
   return {
     async getBalance(businessId) {
-      const data = readAll();
-      return balanceFrom(businessId, data[businessId] ?? []);
+      const { data, error } = await supabase
+        .from("credit_transactions")
+        .select("*")
+        .eq("business_id", businessId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return balanceFrom(businessId, (data ?? []).map(rowToTransaction));
     },
     async recordTransaction(businessId, type, amount, note) {
-      const data = readAll();
-      const transactions = data[businessId] ?? [];
-      const transaction: CreditTransaction = {
-        id: crypto.randomUUID(),
-        businessId,
-        type,
-        amount,
-        note,
-        createdAtISO: new Date().toISOString(),
-      };
-      data[businessId] = [...transactions, transaction];
-      writeAll(data);
-      return balanceFrom(businessId, data[businessId]);
+      const { error: insertError } = await supabase
+        .from("credit_transactions")
+        .insert({ business_id: businessId, type, amount, note: note ?? null });
+      if (insertError) throw insertError;
+      return this.getBalance(businessId);
     },
     async listAllBalances() {
-      const data = readAll();
-      return Object.entries(data).map(([businessId, transactions]) =>
-        balanceFrom(businessId, transactions)
-      );
+      const { data, error } = await supabase
+        .from("credit_transactions")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      const byBusiness = new Map<string, CreditTransaction[]>();
+      for (const row of data ?? []) {
+        const t = rowToTransaction(row);
+        byBusiness.set(t.businessId, [...(byBusiness.get(t.businessId) ?? []), t]);
+      }
+      return Array.from(byBusiness.entries()).map(([businessId, txns]) => balanceFrom(businessId, txns));
     },
   };
 }
 
-export const creditLedger: CreditLedger = createJsonFileCreditLedger();
+export const creditLedger: CreditLedger = createSupabaseCreditLedger();

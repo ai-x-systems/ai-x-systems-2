@@ -9,8 +9,8 @@ export const metadata = { title: 'Dashboard' }
 
 export default async function DashboardPage() {
   const session = await getClientSession()
-  if (!session) redirect('/login')
-  if (!session.businessId) redirect('/login')
+  if (!session) redirect('/client/login')
+  if (!session.businessId) redirect('/client/login')
 
   const business = getBusinessById(session.businessId)
   const balance = await creditLedger.getBalance(session.businessId)

@@ -4,8 +4,10 @@ import { accountStore } from '@/lib/accounts/store'
 import { getBusinessById } from '@/config/businesses'
 import { creditLedger } from '@/lib/billing/credits'
 import { PageHeader } from '@/components/page-header'
+import { AppTopbar } from '@/components/app-topbar'
 import { LogoutButton } from '@/app/dashboard/logout-button'
 import { CreditAdjustForm } from './credit-adjust-form'
+import { CreateClientForm } from './create-client-form'
 
 export const metadata = { title: 'Admin' }
 
@@ -34,9 +36,14 @@ export default async function AdminPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-5xl px-4 py-16 md:px-6">
+      <AppTopbar current="admin" />
       <div className="flex items-start justify-between gap-4">
         <PageHeader eyebrow="Admin" title="Clients" description={`${clients.length} client account(s)`} />
         <LogoutButton role="admin" />
+      </div>
+
+      <div className="mt-8">
+        <CreateClientForm />
       </div>
 
       <div className="mt-10 overflow-x-auto rounded-xl border border-border">

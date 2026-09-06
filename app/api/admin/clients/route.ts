@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/accounts/session";
+import { getAdminSession } from "@/lib/accounts/session";
 import { accountStore } from "@/lib/accounts/store";
 import { creditLedger } from "@/lib/billing/credits";
 import { getBusinessById } from "@/config/businesses";
@@ -14,8 +14,8 @@ export const runtime = "nodejs";
  * client counts this business will have for a long while.
  */
 export async function GET() {
-  const session = await getSession();
-  if (!session || session.role !== "admin") {
+  const session = await getAdminSession();
+  if (!session) {
     return NextResponse.json({ success: false, error: "Admin access required." }, { status: 403 });
   }
 

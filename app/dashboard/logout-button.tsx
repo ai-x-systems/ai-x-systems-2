@@ -3,11 +3,15 @@
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
-export function LogoutButton() {
+export function LogoutButton({ role }: { role: 'admin' | 'client' }) {
   const router = useRouter()
 
   async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' })
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    })
     router.push('/login')
     router.refresh()
   }

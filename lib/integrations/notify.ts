@@ -116,6 +116,29 @@ export async function sendOwnerAlert(alert: OwnerAlert): Promise<NotifyResult> {
   });
 }
 
+/**
+ * Sends a password reset link. Shares the same Gmail sender/transport as
+ * the other two notification functions in this file.
+ *
+ * Never throws. Every failure comes back as `{ success: false, error }`.
+ */
+export async function sendPasswordResetEmail(
+  toEmail: string,
+  resetUrl: string
+): Promise<NotifyResult> {
+  const sender = getSender();
+  if (!sender) {
+    return { success: false, error: "Email notifications are not configured (missing Gmail credentials)." };
+  }
+
+  return sendGmailEmail(sender, {
+    to: toEmail,
+    subject: "Reset your AI x Systems password",
+    html: `<p>Someone requested a password reset for this account.</p><p><a href="${resetUrl}">Click here to set a new password</a>. This link expires in 1 hour.</p><p>If you didn't request this, you can safely ignore this email.</p>`,
+    text: `Reset your password: ${resetUrl} (expires in 1 hour). If you didn't request this, ignore this email.`,
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Internal: Gmail SMTP transport, via nodemailer
 // ---------------------------------------------------------------------------

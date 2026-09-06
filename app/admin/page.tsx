@@ -11,7 +11,7 @@ export const metadata = { title: 'Admin' }
 
 export default async function AdminPage() {
   const session = await getAdminSession()
-  if (!session) redirect('/login')
+  if (!session) redirect('/admin-login')
 
   const accounts = await accountStore.list()
   const clients = await Promise.all(

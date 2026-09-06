@@ -25,6 +25,11 @@ export default function ClientLoginPage() {
               Create your login
             </a>
           </p>
+          <p className="mt-2 text-center text-sm text-muted-foreground">
+            <a href="/client/forgot-password" className="text-primary underline underline-offset-4">
+              Forgot password?
+            </a>
+          </p>
         </div>
       </main>
       <Footer />

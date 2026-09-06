@@ -3,6 +3,7 @@ import { getClientSession } from '@/lib/accounts/session'
 import { getBusinessById } from '@/config/businesses'
 import { creditLedger } from '@/lib/billing/credits'
 import { PageHeader } from '@/components/page-header'
+import { AppTopbar } from '@/components/app-topbar'
 import { LogoutButton } from './logout-button'
 
 export const metadata = { title: 'Dashboard' }
@@ -17,6 +18,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-4 py-16 md:px-6">
+      <AppTopbar current="client" />
       <div className="flex items-start justify-between gap-4">
         <PageHeader
           eyebrow={business?.name}

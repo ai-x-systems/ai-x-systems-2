@@ -19,6 +19,11 @@ export default function AdminLoginPage() {
           <div className="mt-8">
             <AdminLoginForm />
           </div>
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            <a href="/admin-forgot-password" className="text-primary underline underline-offset-4">
+              Forgot password?
+            </a>
+          </p>
         </div>
       </main>
       <Footer />

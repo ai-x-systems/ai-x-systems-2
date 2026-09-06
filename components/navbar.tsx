@@ -30,6 +30,12 @@ export function Navbar() {
           >
             Client Login
           </Link>
+          <Link
+            href="/client/signup"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Client Sign Up
+          </Link>
         </div>
         <div className="hidden md:block">
           <Button size="sm" render={<a href={siteConfig.forms.demoPath} />}>
@@ -65,6 +71,13 @@ export function Navbar() {
               onClick={() => setOpen(false)}
             >
               Client Login
+            </Link>
+            <Link
+              href="/client/signup"
+              className="text-sm text-muted-foreground"
+              onClick={() => setOpen(false)}
+            >
+              Client Sign Up
             </Link>
             <Button
               size="sm"

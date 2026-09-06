@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { getSession } from '@/lib/accounts/session'
+import { getAdminSession } from '@/lib/accounts/session'
 import { accountStore } from '@/lib/accounts/store'
 import { getBusinessById } from '@/config/businesses'
 import { creditLedger } from '@/lib/billing/credits'
@@ -10,9 +10,8 @@ import { CreditAdjustForm } from './credit-adjust-form'
 export const metadata = { title: 'Admin' }
 
 export default async function AdminPage() {
-  const session = await getSession()
+  const session = await getAdminSession()
   if (!session) redirect('/login')
-  if (session.role !== 'admin') redirect('/dashboard')
 
   const accounts = await accountStore.list()
   const clients = await Promise.all(
@@ -37,7 +36,7 @@ export default async function AdminPage() {
     <main className="mx-auto min-h-screen max-w-5xl px-4 py-16 md:px-6">
       <div className="flex items-start justify-between gap-4">
         <PageHeader eyebrow="Admin" title="Clients" description={`${clients.length} client account(s)`} />
-        <LogoutButton />
+        <LogoutButton role="admin" />
       </div>
 
       <div className="mt-10 overflow-x-auto rounded-xl border border-border">

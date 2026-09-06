@@ -3,6 +3,7 @@ import { bookAppointment } from "@/lib/integrations/calendar";
 import { logLead } from "@/lib/integrations/sheets";
 import { sendCallerConfirmation, sendOwnerAlert } from "@/lib/integrations/notify";
 import { sendToConfiguredWebhooks } from "@/lib/integrations/webhook";
+import { recordActivity } from "@/lib/activity/log";
 
 export interface ToolCallArgs {
   name: string;
@@ -144,6 +145,12 @@ export async function executeToolCall(
 
       if (business.demo) {
         console.log("[demo] simulated booking", { business: business.id, ...a });
+        void recordActivity(businessId, "booking", {
+          serviceName: service.name,
+          callerName: a.callerName,
+          startTimeISO: a.preferredStartTimeISO,
+          demo: true,
+        });
         return `Booked ${service.name} for ${a.callerName} at ${a.preferredStartTimeISO}. A confirmation will be sent.`;
       }
 
@@ -186,6 +193,11 @@ export async function executeToolCall(
           startTimeISO: booking.confirmedStartTimeISO,
         },
       });
+      void recordActivity(businessId, "booking", {
+        serviceName: service.name,
+        callerName: a.callerName,
+        startTimeISO: booking.confirmedStartTimeISO,
+      });
 
       return `Booked ${service.name} for ${a.callerName} at ${booking.confirmedStartTimeISO}. A confirmation will be sent.`;
     }
@@ -221,6 +233,11 @@ export async function executeToolCall(
 
       if (business.demo) {
         console.log("[demo] simulated lead", { business: business.id, ...a });
+        void recordActivity(businessId, "lead", {
+          callerName: a.callerName,
+          reason: a.reason,
+          demo: true,
+        });
         return "Got it, I've passed this along to the team.";
       }
 
@@ -248,6 +265,10 @@ export async function executeToolCall(
         businessId: business.id,
         timestampISO: leadTimestampISO,
         data: { callerName: a.callerName, callerPhone: a.callerPhone, reason: a.reason },
+      });
+      void recordActivity(businessId, "lead", {
+        callerName: a.callerName,
+        reason: a.reason,
       });
 
       return "Got it, I've passed this along to the team.";

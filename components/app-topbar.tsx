@@ -6,9 +6,11 @@ import { siteConfig } from '@/lib/site-config'
  * ---------------------------------------------------------------------
  * Used only inside /dashboard and /admin — not the public marketing
  * navbar (components/navbar.tsx). Keeps those two pages from being dead
- * ends: always a way back to the main site, and a cross-link between
- * the two consoles for whoever is wearing both hats (you, testing as
- * admin and client in separate browser sessions).
+ * ends: always a way back to the main site.
+ *
+ * The admin→client cross-link only shows on the admin side, on purpose —
+ * a client's own dashboard should never surface that an admin login
+ * exists at all.
  * ---------------------------------------------------------------------
  */
 export function AppTopbar({ current }: { current: 'admin' | 'client' }) {
@@ -23,13 +25,9 @@ export function AppTopbar({ current }: { current: 'admin' | 'client' }) {
         <Link href="/" className="transition-colors hover:text-foreground">
           Main site
         </Link>
-        {current === 'admin' ? (
+        {current === 'admin' && (
           <Link href="/client/login" className="transition-colors hover:text-foreground">
             Client login
-          </Link>
-        ) : (
-          <Link href="/admin-login" className="transition-colors hover:text-foreground">
-            Admin login
           </Link>
         )}
       </div>

@@ -21,6 +21,7 @@ export interface AccountStore {
     businessId?: string;
   }): Promise<Account>;
   list(): Promise<Account[]>;
+  updatePassword(accountId: string, passwordHash: string): Promise<void>;
 }
 
 function rowToAccount(row: {
@@ -75,6 +76,13 @@ export function createSupabaseAccountStore(): AccountStore {
       const { data, error } = await supabase.from("accounts").select("*");
       if (error) throw error;
       return (data ?? []).map(rowToAccount);
+    },
+    async updatePassword(accountId, passwordHash) {
+      const { error } = await supabase
+        .from("accounts")
+        .update({ password_hash: passwordHash })
+        .eq("id", accountId);
+      if (error) throw error;
     },
   };
 }

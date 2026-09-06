@@ -12,7 +12,7 @@ export function LogoutButton({ role }: { role: 'admin' | 'client' }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ role }),
     })
-    router.push('/login')
+    router.push(role === 'admin' ? '/admin-login' : '/client/login')
     router.refresh()
   }
 

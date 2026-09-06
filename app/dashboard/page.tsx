@@ -37,12 +37,7 @@ export default async function DashboardPage() {
           <p className="mt-2 text-3xl font-semibold tabular-nums">{balance.balance}</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Running low?{' '}
-            
-              href={`mailto:${siteConfig.contact.email}?subject=Top up credits — ${business?.name ?? ''}`}
-              className="text-primary underline underline-offset-4"
-            >
-              Reach out
-            </a>{' '}
+            <a href={`mailto:${siteConfig.contact.email}?subject=Top up credits — ${business?.name ?? ''}`} className="text-primary underline underline-offset-4">Reach out</a>{' '}
             and we&apos;ll send a payment link to top up.
           </p>
         </div>

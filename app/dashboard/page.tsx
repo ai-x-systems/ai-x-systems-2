@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { getSession } from '@/lib/accounts/session'
+import { getClientSession } from '@/lib/accounts/session'
 import { getBusinessById } from '@/config/businesses'
 import { creditLedger } from '@/lib/billing/credits'
 import { PageHeader } from '@/components/page-header'
@@ -8,9 +8,8 @@ import { LogoutButton } from './logout-button'
 export const metadata = { title: 'Dashboard' }
 
 export default async function DashboardPage() {
-  const session = await getSession()
+  const session = await getClientSession()
   if (!session) redirect('/login')
-  if (session.role === 'admin') redirect('/admin')
   if (!session.businessId) redirect('/login')
 
   const business = getBusinessById(session.businessId)
@@ -24,7 +23,7 @@ export default async function DashboardPage() {
           title="Dashboard"
           description={session.email}
         />
-        <LogoutButton />
+        <LogoutButton role="client" />
       </div>
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2">

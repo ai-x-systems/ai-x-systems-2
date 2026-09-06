@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/accounts/session";
+import { getAdminSession } from "@/lib/accounts/session";
 import { creditLedger } from "@/lib/billing/credits";
 import { CreditTransactionType } from "@/types/account";
 
@@ -20,8 +20,8 @@ export async function POST(
   req: NextRequest,
   context: { params: Promise<{ businessId: string }> }
 ) {
-  const session = await getSession();
-  if (!session || session.role !== "admin") {
+  const session = await getAdminSession();
+  if (!session) {
     return NextResponse.json({ success: false, error: "Admin access required." }, { status: 403 });
   }
 

@@ -4,6 +4,7 @@ import { logLead } from "@/lib/integrations/sheets";
 import { sendCallerConfirmation, sendOwnerAlert } from "@/lib/integrations/notify";
 import { sendToConfiguredWebhooks } from "@/lib/integrations/webhook";
 import { recordActivity } from "@/lib/activity/log";
+import { getEffectiveBusinessConfig } from "@/lib/config/overrides";
 
 export interface ToolCallArgs {
   name: string;
@@ -99,6 +100,7 @@ export async function executeToolCall(
 ): Promise<string> {
   const business = getBusinessById(businessId);
   if (!business) return "I couldn't find that business's configuration.";
+  const effectiveBusiness = await getEffectiveBusinessConfig(business);
 
   switch (name) {
     case "book_appointment": {
@@ -177,7 +179,7 @@ export async function executeToolCall(
         startTimeISO: booking.confirmedStartTimeISO!,
       });
       void sendOwnerAlert({
-        ownerEmail: business.integrations.notifyEmail,
+        ownerEmail: effectiveBusiness.integrations.notifyEmail,
         businessName: business.name,
         message: `New booking: ${service.name} for ${a.callerName} at ${booking.confirmedStartTimeISO}.`,
       });
@@ -256,7 +258,7 @@ export async function executeToolCall(
       );
 
       void sendOwnerAlert({
-        ownerEmail: business.integrations.notifyEmail,
+        ownerEmail: effectiveBusiness.integrations.notifyEmail,
         businessName: business.name,
         message: `New lead: ${a.callerName ?? "Unknown"} — ${a.reason}`,
       });

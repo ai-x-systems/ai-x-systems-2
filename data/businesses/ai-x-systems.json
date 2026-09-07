@@ -61,7 +61,7 @@
       "liveDemoAvailable": true,
       "liveDemoType": "ai_website_assistant",
       "description": "The live chat available throughout the AI X Systems website is the real AI Website Assistant demo. Visitors can interact with it directly and ask questions to see how the assistant works.",
-      "website": "https://ai-x-systems-2.vercel.app//demo",
+      "website": "https://ai-x-systems-2.vercel.app/demo",
       "rules": [
         "The live website chat is the real AI Website Assistant demo.",
         "Visitors do not need to provide a phone number to try the demo.",
@@ -73,7 +73,7 @@
     },
 
     "businessSetupForm": {
-      "url": "https://aixsystems.vercel.app/demo",
+      "url": "https://ai-x-systems-2.vercel.app/demo",
       "purpose": "client_onboarding",
       "description": "The form on the /demo page is used by a business to submit its business knowledge, choose the AI services it wants, and provide information about the systems and integrations it currently uses.",
       "collects": [

@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { getAdminSession } from '@/lib/accounts/session'
 import { accountStore } from '@/lib/accounts/store'
 import { getBusinessById } from '@/config/businesses'
@@ -55,12 +56,13 @@ export default async function AdminPage() {
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Credits</th>
               <th className="px-4 py-3 font-medium">Record payment / usage</th>
+              <th className="px-4 py-3 font-medium"></th>
             </tr>
           </thead>
           <tbody>
             {clients.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
                   No client accounts yet.
                 </td>
               </tr>
@@ -88,6 +90,14 @@ export default async function AdminPage() {
                   <td className="px-4 py-3 tabular-nums">{c.creditBalance}</td>
                   <td className="px-4 py-3">
                     <CreditAdjustForm businessId={c.businessId} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/admin/clients/${c.businessId}/edit`}
+                      className="text-xs text-primary underline underline-offset-4"
+                    >
+                      Edit info
+                    </Link>
                   </td>
                 </tr>
               ))

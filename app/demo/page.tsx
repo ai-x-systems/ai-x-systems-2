@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { PageHeader } from '@/components/page-header'
-import { siteConfig, getTallyEmbedUrl } from '@/lib/site-config'
+import { siteConfig } from '@/lib/site-config'
+import { DemoRequestForm } from './demo-request-form'
 
 export const metadata: Metadata = {
   title: 'Get Your Free AI Receptionist Demo',
@@ -28,15 +29,8 @@ export default function DemoPage() {
             }
           />
 
-          <div className="mt-10 overflow-hidden rounded-2xl border border-border bg-card/60">
-            <iframe
-              title={`${siteConfig.brand.name} discovery form`}
-              src={getTallyEmbedUrl()}
-              width="100%"
-              height="700"
-              className="block w-full"
-              loading="lazy"
-            />
+          <div className="mt-10 rounded-2xl border border-border bg-card/60 p-6 md:p-8">
+            <DemoRequestForm />
           </div>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">

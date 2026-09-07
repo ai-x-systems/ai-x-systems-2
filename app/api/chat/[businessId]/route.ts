@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getBusinessById } from "@/config/businesses";
+import { getEffectiveBusinessConfig } from "@/lib/config/overrides";
 import { buildSystemPrompt } from "@/lib/prompt/prompt-builder";
 import { getChatCompletion } from "@/lib/llm/groq-client";
 import { executeToolCall } from "@/lib/tools/execute-tool-call";
@@ -110,10 +111,12 @@ export async function POST(
 
   try {
     let finalText = "";
+    const effectiveBusiness = await getEffectiveBusinessConfig(business);
+    const systemPrompt = buildSystemPrompt(effectiveBusiness);
 
     for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
       const result = await getChatCompletion({
-        systemPrompt: buildSystemPrompt(business),
+        systemPrompt,
         messages: prepareForLlm(history),
         tools: TOOL_DEFINITIONS,
       });

@@ -8,6 +8,12 @@ import { ProspectStatusSelect } from './prospect-status-select'
 
 export const metadata = { title: 'Inquiries' }
 
+const SERVICE_LABELS: Record<string, string> = {
+  voice: 'Voice Receptionist',
+  chatbot: 'Website Chatbot',
+  both: 'Voice + Chatbot',
+}
+
 export default async function InquiriesPage() {
   const session = await getAdminSession()
   if (!session) redirect('/admin-login')
@@ -15,7 +21,7 @@ export default async function InquiriesPage() {
   const prospects = await listProspects()
 
   return (
-    <main className="mx-auto min-h-screen max-w-5xl px-4 py-16 md:px-6">
+    <main className="mx-auto min-h-screen max-w-6xl px-4 py-16 md:px-6">
       <AppTopbar current="admin" />
       <div className="flex items-start justify-between gap-4">
         <PageHeader
@@ -28,53 +34,81 @@ export default async function InquiriesPage() {
         </Link>
       </div>
 
-      <div className="mt-10 overflow-x-auto rounded-xl border border-border">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-left text-muted-foreground">
-              <th className="px-4 py-3 font-medium">Business</th>
-              <th className="px-4 py-3 font-medium">Contact</th>
-              <th className="px-4 py-3 font-medium">Details</th>
-              <th className="px-4 py-3 font-medium">Received</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {prospects.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
-                  No inquiries yet.
-                </td>
-              </tr>
-            ) : (
-              prospects.map((p) => (
-                <tr key={p.id} className="border-b border-border align-top last:border-0">
-                  <td className="px-4 py-3">
-                    <div className="font-medium">{p.businessName}</div>
-                    <div className="text-xs text-muted-foreground">{p.industry ?? '—'}</div>
-                    {p.website ? (
-                      <a href={p.website.startsWith('http') ? p.website : `https://${p.website}`} target="_blank" rel="noreferrer" className="text-xs text-primary underline underline-offset-4">{p.website}</a>
+      <div className="mt-10 space-y-4">
+        {prospects.length === 0 ? (
+          <div className="rounded-xl border border-border p-6 text-center text-sm text-muted-foreground">
+            No inquiries yet.
+          </div>
+        ) : (
+          prospects.map((p) => (
+            <div key={p.id} className="rounded-xl border border-border bg-card p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{p.businessName}</p>
+                    {p.serviceType ? (
+                      <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs text-primary">
+                        {SERVICE_LABELS[p.serviceType] ?? p.serviceType}
+                      </span>
                     ) : null}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div>{p.contactName}</div>
-                    <a href={`mailto:${p.email}`} className="text-xs text-primary underline underline-offset-4">
-                      {p.email}
-                    </a>
-                    {p.phone ? <div className="text-xs text-muted-foreground">{p.phone}</div> : null}
-                  </td>
-                  <td className="max-w-xs px-4 py-3 text-muted-foreground">{p.details ?? '—'}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {[p.industry, p.city, p.country].filter(Boolean).join(' · ') || '—'}
+                  </p>
+                  {p.website ? (
+                    <a href={p.website.startsWith('http') ? p.website : `https://${p.website}`} target="_blank" rel="noreferrer" className="text-xs text-primary underline underline-offset-4">{p.website}</a>
+                  ) : null}
+                </div>
+                <div className="text-right">
+                  <ProspectStatusSelect prospectId={p.id} currentStatus={p.status} />
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {new Date(p.createdAtISO).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3">
-                    <ProspectStatusSelect prospectId={p.id} currentStatus={p.status} />
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+                <div>
+                  <p className="text-xs text-muted-foreground">Contact</p>
+                  <p>{p.contactName}</p>
+                  <a href={`mailto:${p.email}`} className="text-xs text-primary underline underline-offset-4">{p.email}</a>
+                  {p.phone ? <p className="text-xs text-muted-foreground">{p.phone}</p> : null}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Business hours</p>
+                  <p>{p.businessHours ?? '—'}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">Volume</p>
+                  <p>{p.volume ?? '—'}</p>
+                </div>
+              </div>
+
+              {p.offerings ? (
+                <div className="mt-4">
+                  <p className="text-xs text-muted-foreground">Services/products offered</p>
+                  <p className="text-sm">{p.offerings}</p>
+                </div>
+              ) : null}
+
+              {p.challenges ? (
+                <div className="mt-4">
+                  <p className="text-xs text-muted-foreground">What they want the AI to solve</p>
+                  <p className="text-sm">{p.challenges}</p>
+                </div>
+              ) : null}
+
+              {p.details ? (
+                <div className="mt-4">
+                  <p className="text-xs text-muted-foreground">Additional notes</p>
+                  <p className="text-sm">{p.details}</p>
+                </div>
+              ) : null}
+
+              {p.referralSource ? (
+                <p className="mt-4 text-xs text-muted-foreground">Heard about us via: {p.referralSource}</p>
+              ) : null}
+            </div>
+          ))
+        )}
       </div>
     </main>
   )

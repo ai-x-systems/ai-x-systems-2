@@ -53,14 +53,7 @@ export default async function InquiriesPage() {
                     <div className="font-medium">{p.businessName}</div>
                     <div className="text-xs text-muted-foreground">{p.industry ?? '—'}</div>
                     {p.website ? (
-                      
-                        href={p.website.startsWith('http') ? p.website : `https://${p.website}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-primary underline underline-offset-4"
-                      >
-                        {p.website}
-                      </a>
+                      <a href={p.website.startsWith('http') ? p.website : `https://${p.website}`} target="_blank" rel="noreferrer" className="text-xs text-primary underline underline-offset-4">{p.website}</a>
                     ) : null}
                   </td>
                   <td className="px-4 py-3">

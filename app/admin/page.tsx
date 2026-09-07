@@ -40,7 +40,12 @@ export default async function AdminPage() {
       <AppTopbar current="admin" />
       <div className="flex items-start justify-between gap-4">
         <PageHeader eyebrow="Admin" title="Clients" description={`${clients.length} client account(s)`} />
-        <LogoutButton role="admin" />
+        <div className="flex items-center gap-4">
+          <Link href="/admin/inquiries" className="text-sm text-primary underline underline-offset-4">
+            Inquiries
+          </Link>
+          <LogoutButton role="admin" />
+        </div>
       </div>
 
       <div className="mt-8">

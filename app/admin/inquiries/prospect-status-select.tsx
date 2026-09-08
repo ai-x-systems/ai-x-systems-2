@@ -36,6 +36,7 @@ export function ProspectStatusSelect({
       value={status}
       disabled={saving}
       onChange={(e) => handleChange(e.target.value as (typeof STATUSES)[number])}
+      style={{ colorScheme: 'dark' }}
       className="rounded-md border border-input bg-input/30 px-2 py-1 text-xs outline-none focus-visible:border-ring"
     >
       {STATUSES.map((s) => (

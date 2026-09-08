@@ -96,6 +96,7 @@
   origin = origin.replace(/\/+$/, "");
 
   var iframeUrl = origin + "/embed/chat/" + encodeURIComponent(businessId);
+  var businessInfoUrl = origin + "/api/business-info/" + encodeURIComponent(businessId);
 
   // -------------------------------------------------------------------------
   // 3. Brand constants (indigo -> sky, per the AI X Systems brand).
@@ -129,7 +130,7 @@
     ".aixw-launcher:hover{transform:scale(1.06);box-shadow:0 10px 28px rgba(30,41,59,.45);} " +
     ".aixw-launcher:focus-visible{outline:3px solid rgba(79,70,229,.6);outline-offset:2px;} " +
     ".aixw-panel{" +
-    "position:fixed;right:24px;bottom:24px;width:400px;height:min(680px,calc(100vh - 48px));" +
+    "position:fixed;right:24px;bottom:24px;width:400px;height:min(680px,calc(100vh - 48px));height:min(680px,calc(100dvh - 48px));" +
     "max-width:calc(100vw - 32px);z-index:2147483000;" +
     "background:#ffffff;border-radius:16px;overflow:hidden;" +
     "box-shadow:0 16px 48px rgba(15,23,42,.28);" +
@@ -144,6 +145,7 @@
     "display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 18px;" +
     "color:#ffffff;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:15px;font-weight:600;" +
     "} " +
+    ".aixw-header-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;} " +
     ".aixw-close{" +
     "background:transparent;border:0;cursor:pointer;padding:10px;border-radius:8px;" +
     "display:flex;align-items:center;justify-content:center;color:#ffffff;opacity:.85;" +
@@ -151,7 +153,7 @@
     ".aixw-close:hover{opacity:1;background:rgba(255,255,255,.14);} " +
     ".aixw-frame{flex:1 1 auto;border:0;width:100%;height:100%;background:#ffffff;display:block;} " +
     "@media (max-width:480px){" +
-    ".aixw-panel{right:12px;bottom:12px;width:calc(100vw - 24px);height:calc(100vh - 24px);max-width:none;border-radius:14px;}" +
+    ".aixw-panel{right:12px;bottom:12px;width:calc(100vw - 24px);height:calc(100vh - 24px);height:calc(100dvh - 24px);max-width:none;border-radius:14px;}" +
     ".aixw-launcher{right:16px;bottom:16px;}" +
     "}";
 
@@ -202,7 +204,10 @@
 
     var header = document.createElement("div");
     header.className = "aixw-header";
-    header.textContent = "Chat with us";
+    var headerLabel = document.createElement("span");
+    headerLabel.className = "aixw-header-label";
+    headerLabel.textContent = "Chat with us";
+    header.appendChild(headerLabel);
     var close = document.createElement("button");
     close.type = "button";
     close.className = "aixw-close";
@@ -211,6 +216,22 @@
     close.addEventListener("click", toggle);
     header.appendChild(close);
     panel.appendChild(header);
+
+    // Best-effort: personalize the header with the business's name once it
+    // loads. Never blocks the widget's initial render, and a slow/failed
+    // fetch just leaves the generic "Chat with us" label in place.
+    fetch(businessInfoUrl)
+      .then(function (res) {
+        return res.ok ? res.json() : null;
+      })
+      .then(function (data) {
+        if (data && data.success && data.name) {
+          headerLabel.textContent = data.name;
+        }
+      })
+      .catch(function () {
+        // Silent — generic label already showing.
+      });
 
     var frame = document.createElement("iframe");
     frame.className = "aixw-frame";

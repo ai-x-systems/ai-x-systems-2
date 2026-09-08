@@ -138,7 +138,7 @@ export function DemoRequestForm() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <label htmlFor="country" className="text-sm font-medium">Country</label>
-            <select id="country" required value={country} onChange={(e) => setCountry(e.target.value)} className="w-full rounded-lg border border-input bg-input/30 px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
+            <select id="country" required value={country} onChange={(e) => setCountry(e.target.value)} style={{ colorScheme: 'dark' }} className="w-full rounded-lg border border-input bg-input/30 px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
               <option value="" disabled>Select a country</option>
               {COUNTRIES.map((c) => (
                 <option key={c} value={c}>{c}</option>

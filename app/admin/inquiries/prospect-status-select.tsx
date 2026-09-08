@@ -40,7 +40,7 @@ export function ProspectStatusSelect({
       className="rounded-md border border-input bg-input/30 px-2 py-1 text-xs text-foreground outline-none focus-visible:border-ring"
     >
       {STATUSES.map((s) => (
-        <option key={s} value={s}>
+        <option key={s} value={s} style={{ backgroundColor: '#0a0a0a', color: '#fafafa' }}>
           {s.charAt(0).toUpperCase() + s.slice(1)}
         </option>
       ))}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useParams } from "next/navigation";
 
 /**
@@ -28,6 +28,36 @@ interface Message {
 }
 
 const GRADIENT = "linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%)";
+
+/**
+ * Turns any http(s) URL in a message into a real clickable link, styled to
+ * stand out against both bubble colors. The route already normalizes stray
+ * Unicode dash characters in URLs (see lib/chat/chat-response.ts) before
+ * this ever runs, so this only has to handle the splitting/rendering.
+ */
+function linkify(text: string): ReactNode[] {
+  const parts = text.split(/(https?:\/\/\S+)/g);
+  return parts.map((part, i) => {
+    if (/^https?:\/\//.test(part)) {
+      const trimmed = part.replace(/[),.]+$/, ""); // trailing punctuation shouldn't be part of the link
+      const trailing = part.slice(trimmed.length);
+      return (
+        <span key={i}>
+          
+            href={trimmed}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "inherit", textDecoration: "underline", fontWeight: 600 }}
+          >
+            {trimmed}
+          </a>
+          {trailing}
+        </span>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
 
 export default function EmbeddedChatPage() {
   const { businessId } = useParams<{ businessId: string }>();
@@ -118,7 +148,7 @@ export default function EmbeddedChatPage() {
                 wordBreak: "break-word",
               }}
             >
-              {m.content}
+              {linkify(m.content)}
             </div>
           </div>
         ))}

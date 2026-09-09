@@ -37,8 +37,23 @@ export interface ChatApiError {
 export type ChatApiResponse = ChatApiSuccess | ChatApiError;
 
 export function chatSuccessResponse(reply: string, headers: HeadersInit) {
-  const body: ChatApiSuccess = { success: true, reply };
+  const body: ChatApiSuccess = { success: true, reply: sanitizeUrls(reply) };
   return NextResponse.json(body, { status: 200, headers });
+}
+
+/**
+ * Some models (observed with openai/gpt-oss-20b on Groq) occasionally emit
+ * "smart typography" dash variants — non-breaking hyphen (U+2011), hyphen
+ * (U+2010), figure dash (U+2012), en dash (U+2013) — in place of a plain
+ * ASCII "-" when generating a URL, e.g. "ai‑x‑systems‑2.vercel.app" instead
+ * of "ai-x-systems-2.vercel.app". Visually near-identical, but a genuinely
+ * different domain — the link 404s. This normalizes those characters back
+ * to ASCII, but ONLY inside matched URL substrings, so a legitimate em dash
+ * used stylistically elsewhere in a sentence (e.g. "already using it —
+ * just keep asking") is left untouched.
+ */
+function sanitizeUrls(text: string): string {
+  return text.replace(/https?:\/\/\S+/g, (url) => url.replace(/[\u2010\u2011\u2012\u2013]/g, "-"));
 }
 
 export function chatErrorResponse(

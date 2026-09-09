@@ -129,6 +129,17 @@
     "} " +
     ".aixw-launcher:hover{transform:scale(1.06);box-shadow:0 10px 28px rgba(30,41,59,.45);} " +
     ".aixw-launcher:focus-visible{outline:3px solid rgba(79,70,229,.6);outline-offset:2px;} " +
+    ".aixw-callout{" +
+    "position:fixed;right:24px;bottom:92px;max-width:260px;z-index:2147482999;" +
+    "background:#ffffff;color:#111827;border-radius:14px;padding:14px 16px;" +
+    "box-shadow:0 12px 32px rgba(15,23,42,.22);border:1px solid rgba(15,23,42,.08);" +
+    "font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.4;" +
+    "display:flex;align-items:flex-start;gap:8px;cursor:pointer;" +
+    "animation:aixw-pop .22s ease;" +
+    "} " +
+    "@keyframes aixw-pop{from{opacity:0;transform:translateY(8px) scale(.96);}to{opacity:1;transform:translateY(0) scale(1);}} " +
+    ".aixw-callout-close{flex:0 0 auto;background:transparent;border:0;cursor:pointer;color:#9ca3af;padding:2px;line-height:0;} " +
+    ".aixw-callout-close:hover{color:#4b5563;} " +
     ".aixw-panel{" +
     "position:fixed;right:24px;bottom:24px;width:400px;height:min(680px,calc(100vh - 48px));height:min(680px,calc(100dvh - 48px));" +
     "max-width:calc(100vw - 32px);z-index:2147483000;" +
@@ -155,6 +166,7 @@
     "@media (max-width:480px){" +
     ".aixw-panel{right:12px;bottom:12px;width:calc(100vw - 24px);height:calc(100vh - 24px);height:calc(100dvh - 24px);max-width:none;border-radius:14px;}" +
     ".aixw-launcher{right:16px;bottom:16px;}" +
+    ".aixw-callout{right:16px;bottom:84px;max-width:calc(100vw - 32px);}" +
     "}";
 
   // -------------------------------------------------------------------------
@@ -242,10 +254,112 @@
 
     document.body.appendChild(panel);
 
+    maybeShowGreeting();
+
     // Escape closes the panel (but never steals focus from the iframe chat).
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && open) setOpen(false);
     });
+  }
+
+  // -------------------------------------------------------------------------
+  // 5b. First-visit greeting: a small callout bubble a few seconds after
+  //     load, plus a best-effort soft chime. Shown once per browser tab
+  //     session per business (sessionStorage), and never if the panel is
+  //     already open by the time the delay elapses.
+  //
+  //     Sound limitation, by design of every major browser, not a bug here:
+  //     browsers block audio from playing before the visitor has interacted
+  //     with the page at all (autoplay policy). On a visitor's very first
+  //     page load with zero prior clicks/taps/scrolls, the chime may be
+  //     silently blocked — this is caught and ignored, never surfaced as an
+  //     error. It will play normally once the visitor has interacted with
+  //     the page even once (including on their next page view this
+  //     session), which is the same behavior every site with sound sees.
+  // -------------------------------------------------------------------------
+  var GREETING_DELAY_MS = 4000;
+  var GREETING_AUTOHIDE_MS = 12000;
+  var GREETING_MESSAGE = "\uD83D\uDC4B Hi! Have a question? I'm here to help.";
+  var GREETING_SEEN_KEY = "aixw_greeted_" + businessId;
+
+  function playChime() {
+    try {
+      var Ctx = global.AudioContext || global.webkitAudioContext;
+      if (!Ctx) return;
+      var ctx = new Ctx();
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+      osc.onended = function () {
+        ctx.close();
+      };
+    } catch (e) {
+      // Autoplay blocked or AudioContext unavailable — silently skip.
+    }
+  }
+
+  function maybeShowGreeting() {
+    var already = false;
+    try {
+      already = global.sessionStorage.getItem(GREETING_SEEN_KEY) === "1";
+    } catch (e) {
+      // sessionStorage unavailable (e.g. some privacy modes) — treat as not seen.
+    }
+    if (already) return;
+
+    setTimeout(function () {
+      if (open) return; // visitor already opened the chat on their own
+
+      try {
+        global.sessionStorage.setItem(GREETING_SEEN_KEY, "1");
+      } catch (e) {
+        // Non-fatal — greeting just may show again on a later page in this visit.
+      }
+
+      var callout = document.createElement("div");
+      callout.className = "aixw-callout";
+      callout.setAttribute("role", "status");
+
+      var text = document.createElement("span");
+      text.style.flex = "1 1 auto";
+      text.textContent = GREETING_MESSAGE;
+      callout.appendChild(text);
+
+      var closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "aixw-callout-close";
+      closeBtn.setAttribute("aria-label", "Dismiss");
+      closeBtn.innerHTML =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      callout.appendChild(closeBtn);
+
+      function remove() {
+        if (callout.parentNode) callout.parentNode.removeChild(callout);
+      }
+
+      closeBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        remove();
+      });
+      callout.addEventListener("click", function () {
+        remove();
+        setOpen(true);
+      });
+
+      document.body.appendChild(callout);
+      playChime();
+
+      setTimeout(remove, GREETING_AUTOHIDE_MS);
+    }, GREETING_DELAY_MS);
   }
 
   function ready(fn) {

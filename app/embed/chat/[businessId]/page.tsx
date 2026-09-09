@@ -30,26 +30,56 @@ interface Message {
 const GRADIENT = "linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%)";
 
 /**
- * Turns any http(s) URL in a message into a real clickable link, styled to
+ * Turns any link in a message into a real clickable link, styled to
  * stand out against both bubble colors. The route already normalizes stray
  * Unicode dash characters in URLs (see lib/chat/chat-response.ts) before
- * this ever runs, so this only has to handle the splitting/rendering.
+ * this ever runs.
+ *
+ * Handles two shapes, in one pass, so they can never double-render:
+ * Markdown-style [label](url) — the model is now instructed not to emit
+ * these (see lib/prompt/prompt-builder.ts's FORMATTING rule), but this is
+ * a safety net in case it does anyway — and bare "https://..." URLs.
+ * A naive bare-URL-only regex would swallow an entire [text](url)
+ * construct as one malformed match (no whitespace between the two halves),
+ * which is what caused the "doubled" link text seen in testing.
  */
 function linkify(text: string): ReactNode[] {
-  const parts = text.split(/(https?:\/\/\S+)/g);
-  return parts.map((part, i) => {
-    if (/^https?:\/\//.test(part)) {
-      const trimmed = part.replace(/[),.]+$/, ""); // trailing punctuation shouldn't be part of the link
-      const trailing = part.slice(trimmed.length);
-      return (
-        <span key={i}>
-          <a href={trimmed} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "underline", fontWeight: 600 }}>{trimmed}</a>
-          {trailing}
-        </span>
-      );
+  const pattern = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|https?:\/\/\S+/g;
+  const nodes: ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(<span key={key++}>{text.slice(lastIndex, match.index)}</span>);
     }
-    return <span key={i}>{part}</span>;
-  });
+
+    const linkStyle = { color: "inherit", textDecoration: "underline", fontWeight: 600 } as const;
+
+    if (match[1] && match[2]) {
+      // Markdown-style [label](url)
+      nodes.push(
+        <a key={key++} href={match[2]} target="_blank" rel="noreferrer" style={linkStyle}>{match[1]}</a>
+      );
+    } else {
+      // Bare URL — trailing punctuation (a period ending the sentence, a
+      // closing paren) shouldn't be swallowed into the link itself.
+      const raw = match[0];
+      const trimmed = raw.replace(/[),.]+$/, "");
+      const trailing = raw.slice(trimmed.length);
+      nodes.push(<a key={key++} href={trimmed} target="_blank" rel="noreferrer" style={linkStyle}>{trimmed}</a>);
+      if (trailing) nodes.push(<span key={key++}>{trailing}</span>);
+    }
+
+    lastIndex = pattern.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(<span key={key++}>{text.slice(lastIndex)}</span>);
+  }
+
+  return nodes;
 }
 
 export default function EmbeddedChatPage() {

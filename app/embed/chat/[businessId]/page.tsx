@@ -43,14 +43,7 @@ function linkify(text: string): ReactNode[] {
       const trailing = part.slice(trimmed.length);
       return (
         <span key={i}>
-          
-            href={trimmed}
-            target="_blank"
-            rel="noreferrer"
-            style={{ color: "inherit", textDecoration: "underline", fontWeight: 600 }}
-          >
-            {trimmed}
-          </a>
+          <a href={trimmed} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "underline", fontWeight: 600 }}>{trimmed}</a>
           {trailing}
         </span>
       );

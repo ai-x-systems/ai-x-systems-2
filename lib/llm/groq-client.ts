@@ -132,6 +132,25 @@ export async function getChatCompletion(
   }
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Groq's 429 body includes a human-readable hint like "Please try again in
+ * 2.175s." — parsed here so the retry waits exactly that long (plus a small
+ * buffer for clock drift) instead of a blind guess. Falls back to null
+ * (caller uses its own default) if the message doesn't match, since this
+ * wording isn't a documented, stable API contract.
+ */
+function parseRetryAfterMs(bodyText: string): number | null {
+  const match = bodyText.match(/try again in ([\d.]+)s/i);
+  if (!match) return null;
+  const seconds = Number(match[1]);
+  if (!Number.isFinite(seconds) || seconds <= 0) return null;
+  return Math.ceil(seconds * 1000) + 250;
+}
+
 // ---------------------------------------------------------------------------
 // Groq-specific implementation
 // ---------------------------------------------------------------------------
@@ -146,9 +165,10 @@ interface CallGroqParams {
 
 async function callGroq(
   apiKey: string,
-  { messages, tools, model, temperature, maxTokens }: CallGroqParams
+  { messages, tools, model, temperature, maxTokens }: CallGroqParams,
+  attempt: number = 1
 ): Promise<ChatCompletionResult> {
-  console.log("[GROQ REQUEST]", { model, toolCount: tools?.length ?? 0 });
+  console.log("[GROQ REQUEST]", { model, toolCount: tools?.length ?? 0, attempt });
   const res = await fetch(GROQ_ENDPOINT, {
     method: "POST",
     headers: {
@@ -168,11 +188,30 @@ async function callGroq(
   if (!res.ok) {
     const bodyText = await res.text().catch(() => "");
     console.error(`[llm] Groq request failed: ${res.status} ${bodyText}`);
+
+    // Groq's free/on-demand tier enforces a tokens-per-minute cap, not a
+    // per-request cap — a burst (e.g. a long conversation history plus a
+    // big system prompt) can transiently exceed it even though the very
+    // next request, a couple seconds later once the per-minute window
+    // rolls over, would succeed. One automatic retry with a short backoff
+    // turns that into an invisible ~2-4s delay instead of a visible
+    // "Sorry, I'm having trouble responding" failure — without this, every
+    // TPM burst was a hard user-facing error for no real reason.
+    if (res.status === 429 && attempt === 1) {
+      const waitMs = parseRetryAfterMs(bodyText) ?? 3000;
+      console.warn(`[llm] Groq 429 — retrying once in ${waitMs}ms`);
+      await sleep(waitMs);
+      return callGroq(apiKey, { messages, tools, model, temperature, maxTokens }, 2);
+    }
+
     return {
       success: false,
       error: {
         code: "request_failed",
-        message: "The AI service returned an error. Please try again.",
+        message:
+          res.status === 429
+            ? "I'm getting a lot of requests right now — please try that again in a few seconds."
+            : "The AI service returned an error. Please try again.",
       },
     };
   }

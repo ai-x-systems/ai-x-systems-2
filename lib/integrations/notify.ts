@@ -139,6 +139,25 @@ export async function sendPasswordResetEmail(
   });
 }
 
+/**
+ * Sends a one-off test email to confirm GMAIL_USER/GMAIL_APP_PASSWORD are
+ * actually working, without needing to trigger a real booking/lead/reset
+ * to find out. Used by the admin "Test email delivery" button.
+ */
+export async function sendTestEmail(toEmail: string): Promise<NotifyResult> {
+  const sender = getSender();
+  if (!sender) {
+    return { success: false, error: "GMAIL_USER is not set." };
+  }
+
+  return sendGmailEmail(sender, {
+    to: toEmail,
+    subject: "AI x Systems — test email",
+    html: `<p>This is a test email from your AI x Systems admin dashboard, sent at ${new Date().toISOString()}. If you received this, email delivery is working.</p>`,
+    text: `This is a test email from your AI x Systems admin dashboard, sent at ${new Date().toISOString()}. If you received this, email delivery is working.`,
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Internal: Gmail SMTP transport, via nodemailer
 // ---------------------------------------------------------------------------

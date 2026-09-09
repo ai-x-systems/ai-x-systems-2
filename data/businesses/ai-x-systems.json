@@ -7,7 +7,7 @@
   "demo": true,
 
   "contact": {
-    "website": "https://aixsystems.com",
+    "website": "https://ai-x-systems-2.vercel.app",
     "email": "hello@aixsystems.com"
   },
 
@@ -34,7 +34,7 @@
     "company": {
       "name": "AI X Systems",
       "description": "AI X Systems provides AI-powered receptionist and website assistant solutions for businesses.",
-      "website": "https://aixsystems.com"
+      "website": "https://ai-x-systems-2.vercel.app"
     },
 
     "services": [
@@ -231,7 +231,7 @@
   "booking": {
     "enabled": true,
     "purpose": "ai_x_systems_client_booking",
-    "appointmentTypes": [],
+    "appointmentTypes": ["ai-receptionist", "ai-website-assistant"],
     "bufferMinutes": 10,
     "timezone": "America/Chicago",
     "provider": "google_calendar",

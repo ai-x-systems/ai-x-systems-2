@@ -9,6 +9,7 @@ import { AppTopbar } from '@/components/app-topbar'
 import { LogoutButton } from '@/app/dashboard/logout-button'
 import { CreditAdjustForm } from './credit-adjust-form'
 import { CreateClientForm } from './create-client-form'
+import { TestEmailButton } from './test-email-button'
 
 export const metadata = { title: 'Admin' }
 
@@ -48,8 +49,9 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-8 grid gap-6 sm:grid-cols-2">
         <CreateClientForm />
+        <TestEmailButton defaultEmail={session.email} />
       </div>
 
       <div className="mt-10 overflow-x-auto rounded-xl border border-border">

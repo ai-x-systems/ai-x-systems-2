@@ -19,6 +19,18 @@ import "server-only";
 
 const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
+// Vercel's default serverless function timeout is 10s on the Hobby plan.
+// The PREVIOUS version of this retry logic used Groq's own suggested wait
+// time uncapped — which can be 20+ seconds under heavier throttling (seen
+// live: "please try again in 22.8675s") — so the function itself could be
+// killed mid-sleep before ever attempting the retry, which is the most
+// likely cause of "book an appointment" failing outright rather than
+// succeeding on retry. Capping the wait tightly, and limiting to one
+// retry, keeps the worst case (one real request + one capped wait + one
+// retry request) comfortably under 10s even on Hobby.
+const MAX_RETRIES = 1;
+const MAX_RETRY_WAIT_MS = 4000;
+
 export const LLM_DEFAULTS = {
   model: process.env.GROQ_MODEL || "openai/gpt-oss-20b",
   temperature: 0.4,
@@ -191,17 +203,16 @@ async function callGroq(
 
     // Groq's free/on-demand tier enforces a tokens-per-minute cap, not a
     // per-request cap — a burst (e.g. a long conversation history plus a
-    // big system prompt) can transiently exceed it even though the very
-    // next request, a couple seconds later once the per-minute window
-    // rolls over, would succeed. One automatic retry with a short backoff
-    // turns that into an invisible ~2-4s delay instead of a visible
-    // "Sorry, I'm having trouble responding" failure — without this, every
-    // TPM burst was a hard user-facing error for no real reason.
-    if (res.status === 429 && attempt === 1) {
-      const waitMs = parseRetryAfterMs(bodyText) ?? 3000;
-      console.warn(`[llm] Groq 429 — retrying once in ${waitMs}ms`);
+    // big system prompt) can transiently exceed it even though a request
+    // a few seconds later, once the per-minute window rolls over, would
+    // succeed. One automatic retry with a short, capped backoff (see
+    // MAX_RETRY_WAIT_MS above) turns that into an invisible delay instead
+    // of a visible failure.
+    if (res.status === 429 && attempt <= MAX_RETRIES) {
+      const waitMs = Math.min(parseRetryAfterMs(bodyText) ?? 3000, MAX_RETRY_WAIT_MS);
+      console.warn(`[llm] Groq 429 — retrying (attempt ${attempt + 1}) in ${waitMs}ms`);
       await sleep(waitMs);
-      return callGroq(apiKey, { messages, tools, model, temperature, maxTokens }, 2);
+      return callGroq(apiKey, { messages, tools, model, temperature, maxTokens }, attempt + 1);
     }
 
     return {

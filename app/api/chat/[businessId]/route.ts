@@ -127,12 +127,17 @@ export async function POST(
           code: result.error.code,
           message: result.error.message,
         });
-        return chatErrorResponse(
-          502,
-          "llm_unavailable",
-          "Sorry, I'm having trouble responding right now. Please try again.",
-          headers
-        );
+        // Use the specific message when we have a genuinely useful one for
+        // the visitor (e.g. "please try again in a few seconds" on a rate
+        // limit) — otherwise fall back to the generic wording. Previously
+        // this always showed the generic message regardless of cause,
+        // which made a transient, retry-worthy rate limit look identical
+        // to a hard failure.
+        const userMessage =
+          result.error.code === "request_failed" && result.error.message.length < 120
+            ? result.error.message
+            : "Sorry, I'm having trouble responding right now. Please try again.";
+        return chatErrorResponse(502, "llm_unavailable", userMessage, headers);
       }
 
       const { content, toolCalls } = result.message;

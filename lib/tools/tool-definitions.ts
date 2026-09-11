@@ -3,6 +3,18 @@
  * (web chat) accept this exact shape, so it's defined once and reused by
  * lib/voice/providers/vapi/assistant-config.ts and
  * app/api/chat/[businessId]/route.ts.
+ *
+ * Deliberately NO "required" arrays on any of these. Groq's own function-
+ * calling layer enforces "required" strictly server-side: if the model
+ * calls a tool before it actually has every required field, Groq rejects
+ * the entire completion with a 400 tool_use_failed error — before
+ * lib/tools/execute-tool-call.ts's own field-by-field validation (which
+ * handles this gracefully, e.g. "Before I can book that, I still need
+ * your name") ever gets a chance to run. That 400 surfaced as a hard,
+ * unrecoverable chat failure in production. Leaving every field optional
+ * here means an incomplete/premature tool call is always allowed through
+ * to our own code, which is the only place that should decide what to do
+ * about missing data.
  */
 export const TOOL_DEFINITIONS = [
   {
@@ -26,7 +38,6 @@ export const TOOL_DEFINITIONS = [
             description: "ISO 8601 datetime in the business's local timezone.",
           },
         },
-        required: ["callerName", "callerPhone", "serviceId", "preferredStartTimeISO"],
       },
     },
   },
@@ -49,7 +60,6 @@ export const TOOL_DEFINITIONS = [
             description: "The confirmedStartTimeISO returned by the earlier book_appointment call.",
           },
         },
-        required: ["email"],
       },
     },
   },
@@ -66,7 +76,6 @@ export const TOOL_DEFINITIONS = [
           callerPhone: { type: "string" },
           reason: { type: "string" },
         },
-        required: ["callerName", "reason"],
       },
     },
   },

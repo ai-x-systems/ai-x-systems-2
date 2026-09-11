@@ -229,14 +229,14 @@
   },
 
   "booking": {
-    "enabled": true,
+    "enabled": false,
     "purpose": "ai_x_systems_client_booking",
     "appointmentTypes": ["ai-receptionist", "ai-website-assistant"],
     "bufferMinutes": 10,
     "timezone": "America/Chicago",
     "provider": "google_calendar",
     "calendarId": "aixsautomation@gmail.com",
-    "note": "AI X Systems is Client #1 and currently uses its configured Google Calendar. This booking configuration belongs specifically to AI X Systems and must not be used as the default for future clients."
+    "note": "Booking is intentionally disabled for the website chat channel — this isn't a phone call, so appointment interest is captured as a lead in the Google Sheet (see leadManagement below) instead of a real Calendar event. AI X Systems is Client #1; this configuration belongs specifically to AI X Systems and must not be used as the default for future clients."
   },
 
   "leadManagement": {
@@ -265,10 +265,11 @@
       "system": null
     },
     "booking": {
-      "enabled": true,
+      "enabled": false,
       "provider": "google_calendar",
       "system": "google_calendar",
-      "calendarId": "aixsautomation@gmail.com"
+      "calendarId": "aixsautomation@gmail.com",
+      "note": "Disabled for chat — see top-level booking.note."
     },
     "calendar": {
       "enabled": true,

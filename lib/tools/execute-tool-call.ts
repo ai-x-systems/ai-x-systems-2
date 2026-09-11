@@ -231,13 +231,23 @@ export async function executeToolCall(
     }
 
     case "log_lead": {
-      const a = args as { callerName?: string; callerPhone?: string; reason: string };
+      const a = args as { callerName?: string; callerPhone?: string; reason?: string };
+
+      // Same "tool schema no longer enforces required fields, so this is
+      // the only real validation" reasoning as book_appointment above —
+      // now that log_lead's parameters have no "required" array either, a
+      // premature/empty call must be caught here, not silently logged as
+      // a blank lead.
+      if (isMissingOrPlaceholder(a.reason)) {
+        return "Sure — what's the best reason to note for the team, and what name should I put with it?";
+      }
+      const reason = a.reason as string;
 
       if (business.demo) {
         console.log("[demo] simulated lead", { business: business.id, ...a });
         void recordActivity(businessId, "lead", {
           callerName: a.callerName,
-          reason: a.reason,
+          reason,
           demo: true,
         });
         return "Got it, I've passed this along to the team.";
@@ -250,7 +260,7 @@ export async function executeToolCall(
           businessId,
           callerName: a.callerName,
           callerPhone: a.callerPhone,
-          reason: a.reason,
+          reason,
           callTimestampISO: leadTimestampISO,
         },
         business.integrations.leadSheetId ?? "",
@@ -260,17 +270,17 @@ export async function executeToolCall(
       void sendOwnerAlert({
         ownerEmail: effectiveBusiness.integrations.notifyEmail,
         businessName: business.name,
-        message: `New lead: ${a.callerName ?? "Unknown"} — ${a.reason}`,
+        message: `New lead: ${a.callerName ?? "Unknown"} — ${reason}`,
       });
       void sendToConfiguredWebhooks(business, {
         event: "lead",
         businessId: business.id,
         timestampISO: leadTimestampISO,
-        data: { callerName: a.callerName, callerPhone: a.callerPhone, reason: a.reason },
+        data: { callerName: a.callerName, callerPhone: a.callerPhone, reason },
       });
       void recordActivity(businessId, "lead", {
         callerName: a.callerName,
-        reason: a.reason,
+        reason,
       });
 
       return "Got it, I've passed this along to the team.";
